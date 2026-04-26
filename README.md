@@ -26,17 +26,18 @@ The project uses 2018 US domestic flight data to:
 ## Project Structure
 
 ```text
-├── delay_duration                      Notebook, supporting scripts & model pickle for predicting delay duration
-├── delay_probability                   Notebook, supporting scripts & model pickle for predicting delay probability
-├── docs                                Final Report and Final poster files
-└── visualization
-    ├── combined-dashboard
-    │   ├── backend                     Local API for model prediction
-    │   ├── dashboard                   Regional Explorer page
-    │   ├── model
-    │   ├── shared                      Shared navigation styling   
-    │   └── visualisation-dashboard     Overview dashboard page
-    └── datamodel
+├── CODE
+│   ├── delay_duration			        Notebook, supporting scripts and model pickle for predicting delay duration
+│   ├── delay_probability		        Notebook, supporting scripts and model pickle for predicting delay probability
+│   └── visualization
+│       ├── combined-dashboard
+│       │   ├── backend			        Local API for model prediction
+│       │   ├── dashboard		        Regional Explorer page
+│       │   ├── model
+│       │   ├── shared			        Shared navigation styling 
+│       │   └── visualisation-dashboard	Overview dashboard page
+│       └── datamodel
+└── DOC				                	Final report and poster
 
 ```
 
@@ -58,8 +59,8 @@ Before starting, make sure you have:
 ### 1. Clone the repository
 
 ```bash
-git clone <repo-url>
-cd 6242-data-visualization
+git clone https://github.com/0xJasonL/6242_team118
+cd team118final
 ```
 
 ### 2. Prepare the dataset
@@ -252,4 +253,3 @@ python server.py
 ```
 
 If you change the backend port, update the frontend backend URL accordingly.
-# 6242_team118
