@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flight Delay Insight Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="/shared/nav.css" />
+</head>
+<body>
+  <nav class="site-nav">
+    <a class="nav-brand" href="#">✈ Flight<span>Delay</span></a>
+    <ul class="nav-links">
+      <li><a href="/visualisation-dashboard/frontend/index.html" class="active">Insight Dashboard</a></li>
+      <li><a href="/dashboard/us_region_dashboard_echarts.html">Regional Explorer</a></li>
+    </ul>
+  </nav>
+  <header>
+    <h1>Flight Delay Insight Dashboard</h1>
+    <span>US Domestic Flights · 2018</span>
+  </header>
+
+  <main>
+    <!-- Global state filter -->
+    <div class="chart-card" style="padding:16px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <label for="state-select" style="font-size:13px;font-weight:600;color:#555;white-space:nowrap;">State Filter</label>
+      <select id="state-select" class="filter-select" style="width:220px;">
+        <option value="">All States</option>
+      </select>
+      <span id="state-filter-note" style="font-size:12px;color:#888;"></span>
+    </div>
+
+    <!-- a. Airport + Route Network (merged) -->
+    <div class="chart-card">
+      <h2>Airport &amp; Route Network</h2>
+      <p>Circle size = total traffic · Arc thickness = flight volume · Click an airport to highlight its routes and deep dive</p>
+      <div style="margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <label for="airport-select" style="font-size:12px;color:#888;">Origin Airport</label>
+        <select id="airport-select" class="filter-select" style="width:320px;">
+          <option value="">— Select an airport —</option>
+        </select>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <label style="font-size:12px;color:#888;">Routes shown:</label>
+          <input type="range" id="route-n-slider" min="25" max="150" value="150" step="25" style="width:140px;vertical-align:middle;">
+          <span id="route-n-display" style="font-size:13px;color:#555;font-weight:500;">150</span>
+        </div>
+      </div>
+      <div id="airport-summary" style="display:none;gap:16px;margin-bottom:20px;"></div>
+      <div class="airport-layout">
+        <div id="airport-map"></div>
+        <div id="airport-deepdive" class="deepdive-panel" style="display:none;">
+          <h3 id="deepdive-title" style="font-size:14px;font-weight:600;margin-bottom:16px;"></h3>
+          <p style="font-size:12px;color:#888;margin-bottom:8px;">Monthly Departures &amp; Avg Delay</p>
+          <div id="monthly-chart"></div>
+          <p style="font-size:12px;color:#888;margin:20px 0 8px;">Top 10 High-Delay Routes</p>
+          <div id="toproutes-chart"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- b. Temporal Heatmap -->
+    <div class="chart-card">
+      <h2>Delay Heatmap — Month × Day of Week</h2>
+      <p>Average departure delay in minutes · Green = below average · Red = above average</p>
+      <div id="temporal-chart"></div>
+    </div>
+
+    <!-- c. Carrier Delays -->
+    <div class="chart-card">
+      <h2>Average Departure Delay by Carrier</h2>
+      <p>Avg minutes of departure delay per airline · Excludes cancelled flights</p>
+      <div id="carrier-chart"></div>
+    </div>
+
+    <!-- e. Dep Time Scatter -->
+    <div class="chart-card">
+      <h2>Departure Time vs Avg Delay — Cyclical Encoding</h2>
+      <p>Scheduled departure time encoded as sin/cos · Circle size = flight volume · Red line = trend</p>
+      <div id="dep-time-scatter-chart"></div>
+    </div>
+
+    <!-- d. Delay Causes -->
+    <div class="chart-card">
+      <h2>Delay Cause Breakdown</h2>
+      <p>Average delay in minutes for affected flights only · Select a carrier and month to filter</p>
+      <div style="margin-bottom:16px;display:flex;gap:12px;">
+        <select id="delay-carrier-select" class="filter-select" style="width:220px;"></select>
+        <select id="delay-month-select" class="filter-select" style="width:140px;"></select>
+      </div>
+      <div id="delay-causes-chart"></div>
+    </div>
+  </main>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson@3/dist/topojson.min.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/charts/carrierChart.js"></script>
+  <script src="js/charts/temporalHeatmap.js"></script>
+  <script src="js/charts/airportMap.js"></script>
+  <script src="js/charts/delayCauses.js"></script>
+  <script src="js/charts/depTimeScatter.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

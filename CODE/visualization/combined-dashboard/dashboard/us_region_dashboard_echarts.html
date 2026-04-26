@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>US Region Flight Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <style>
+    :root {
+      --bg-0: #f4efe8;
+      --bg-1: #efe6da;
+      --ink-0: #232323;
+      --ink-1: #505050;
+      --panel: #fffaf2;
+      --accent: #c24b33;
+      --accent-2: #1d5f77;
+      --edge: #d8c9b6;
+      --ok: #2f7d55;
+      --warn: #b3620f;
+      --shadow: 0 12px 30px rgba(38, 24, 10, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Trebuchet MS", "Gill Sans", sans-serif;
+      color: var(--ink-0);
+      background:
+        radial-gradient(circle at 12% 10%, rgba(194, 75, 51, 0.18), transparent 30%),
+        radial-gradient(circle at 90% 30%, rgba(29, 95, 119, 0.14), transparent 35%),
+        linear-gradient(140deg, var(--bg-0), var(--bg-1));
+      min-height: 100vh;
+    }
+
+    .app-shell {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 330px 1fr;
+      gap: 16px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--edge);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .controls {
+      padding: 18px;
+      position: sticky;
+      top: 12px;
+      height: fit-content;
+      animation: slide-in 500ms ease;
+    }
+
+    .controls h1 {
+      margin: 0;
+      font-size: 1.25rem;
+      letter-spacing: 0.02em;
+    }
+
+    .controls p {
+      margin: 8px 0 16px;
+      color: var(--ink-1);
+      font-size: 0.9rem;
+      line-height: 1.35;
+    }
+
+    .field {
+      margin-bottom: 12px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      font-size: 0.86rem;
+      color: var(--ink-1);
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid #c9b8a4;
+      border-radius: 9px;
+      background: #fff;
+      color: var(--ink-0);
+      font-size: 0.93rem;
+    }
+
+    .suggestion-wrap {
+      position: relative;
+    }
+
+    .combo-input {
+      padding-right: 38px !important;
+    }
+
+    .combo-toggle {
+      position: absolute;
+      top: 50%;
+      right: 6px;
+      transform: translateY(-50%);
+      width: 28px;
+      height: 28px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--ink-1);
+      font-size: 12px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .combo-toggle:hover {
+      background: #f4e8db;
+      color: var(--ink-0);
+    }
+
+    .suggestion-list {
+      position: absolute;
+      z-index: 20;
+      left: 0;
+      right: 0;
+      top: calc(100% + 4px);
+      display: none;
+      max-height: 330px;
+      overflow-y: auto;
+      background: #fff;
+      border: 1px solid #c9b8a4;
+      border-radius: 10px;
+      box-shadow: 0 12px 24px rgba(38, 24, 10, 0.14);
+    }
+
+    .suggestion-list.open {
+      display: block;
+    }
+
+    .suggestion-item {
+      padding: 8px 10px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border-bottom: 1px solid #efe4d6;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .suggestion-item:last-child {
+      border-bottom: 0;
+    }
+
+    .suggestion-item:hover,
+    .suggestion-item.active {
+      background: #f4e8db;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    #applyBtn {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    #resetBtn {
+      background: #e8d8c7;
+      color: #4d3927;
+    }
+
+    .stats {
+      margin-top: 14px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .prediction-panel {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid #eadfce;
+    }
+
+    .prediction-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .prediction-header h2 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .prediction-status {
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .prediction-status.idle {
+      color: #8a7a6a;
+      background: #f4efe8;
+      border: 1px solid var(--edge);
+    }
+
+    .prediction-status.live {
+      color: var(--ok);
+      background: rgba(47, 125, 85, 0.12);
+      border: 1px solid rgba(47, 125, 85, 0.18);
+    }
+
+    .prediction-status.error {
+      color: var(--accent);
+      background: rgba(194, 75, 51, 0.12);
+      border: 1px solid rgba(194, 75, 51, 0.18);
+    }
+
+    .prediction-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .prediction-grid .field {
+      margin-bottom: 0;
+    }
+
+    .prediction-grid .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .prediction-result {
+      margin-top: 12px;
+      border: 1px solid var(--edge);
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(255, 250, 242, 0.95), rgba(244, 239, 232, 0.95));
+      padding: 12px 14px;
+    }
+
+    .prediction-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-1);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .prediction-minutes {
+      font-size: 1.9rem;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .prediction-meta {
+      font-size: 0.9rem;
+      color: #6f6155;
+      font-weight: 600;
+    }
+
+    .prediction-meta-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .help-tip {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      border: 1px solid #c9b8a4;
+      background: #fff;
+      color: var(--ink-1);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: help;
+      user-select: none;
+    }
+
+    .help-tip::after {
+      content: attr(data-tip);
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 10px);
+      transform: translateX(-50%);
+      width: 220px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: #2f2418;
+      color: #fffaf2;
+      font-size: 0.76rem;
+      line-height: 1.4;
+      box-shadow: 0 12px 24px rgba(38, 24, 10, 0.24);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 140ms ease;
+      text-align: left;
+      font-weight: 500;
+      z-index: 30;
+    }
+
+    .help-tip:hover::after,
+    .help-tip:focus-visible::after {
+      opacity: 1;
+    }
+
+    .prediction-error {
+      margin-top: 10px;
+      color: var(--accent);
+      font-size: 0.84rem;
+      display: none;
+    }
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      border: 1px dashed #d6c5b3;
+      border-radius: 10px;
+      padding: 7px 9px;
+      font-size: 0.88rem;
+      background: #fff;
+    }
+
+    .stat-value {
+      font-weight: 700;
+    }
+
+    .dashboard {
+      display: grid;
+      gap: 14px;
+      grid-template-rows: auto auto;
+      animation: fade-in 650ms ease;
+    }
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .chart {
+      width: 100%;
+      min-height: 420px;
+      border-radius: 18px;
+      overflow: hidden;
+    }
+
+    .chart.with-help {
+      position: relative;
+    }
+
+    .chart-help {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 5;
+    }
+
+    .chart.small {
+      min-height: 330px;
+    }
+
+    #routesChart {
+      min-height: 320px;
+      padding: 18px;
+    }
+
+    .stats-panel {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    .stats-panel-header {
+      margin-bottom: 14px;
+    }
+
+    .stats-panel-header h2 {
+      margin: 0 0 6px;
+      font-size: 1rem;
+    }
+
+    .stats-panel-header p {
+      margin: 0;
+      color: var(--ink-1);
+      font-size: 0.86rem;
+      line-height: 1.4;
+    }
+
+    .stats-panel-grid {
+      margin-top: 0;
+      gap: 10px;
+    }
+
+    .stats-panel-grid .stat-row {
+      padding: 12px 14px;
+      border-style: solid;
+      background: linear-gradient(135deg, rgba(255, 250, 242, 0.95), rgba(244, 239, 232, 0.95));
+    }
+
+    .stat-label-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    @keyframes fade-in {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slide-in {
+      from {
+        opacity: 0;
+        transform: translateX(-8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @media (max-width: 980px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .controls {
+        position: static;
+      }
+    }
+
+    .site-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--panel);
+      border-bottom: 1px solid var(--edge);
+      box-shadow: 0 2px 10px rgba(38, 24, 10, 0.08);
+      display: flex;
+      align-items: center;
+      padding: 0 28px;
+      height: 52px;
+    }
+
+    .site-nav .nav-brand {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink-0);
+      letter-spacing: 0.02em;
+      text-decoration: none;
+      margin-right: 28px;
+      white-space: nowrap;
+    }
+
+    .site-nav .nav-brand span {
+      color: var(--accent);
+    }
+
+    .site-nav .nav-links {
+      display: flex;
+      gap: 4px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .site-nav .nav-links a {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink-1);
+      text-decoration: none;
+      padding: 6px 14px;
+      border-radius: 8px;
+      transition: background 150ms, color 150ms;
+      white-space: nowrap;
+    }
+
+    .site-nav .nav-links a:hover {
+      background: #f0e4d6;
+      color: var(--ink-0);
+    }
+
+    .site-nav .nav-links a.active {
+      background: var(--accent);
+      color: #fff;
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="site-nav">
+    <a class="nav-brand" href="#">✈ Flight<span>Delay</span></a>
+    <ul class="nav-links">
+      <li><a href="/visualisation-dashboard/frontend/index.html">Insight Dashboard</a></li>
+      <li><a href="/dashboard/us_region_dashboard_echarts.html" class="active">Regional Explorer</a></li>
+    </ul>
+  </nav>
+  <div class="app-shell">
+    <aside class="panel controls">
+      <h1>Delay Prediction</h1>
+      <p>Use one shared control panel for both the regional explorer and the departure delay prediction model.</p>
+
+      <div class="field">
+        <label for="region">Region</label>
+        <select id="region"></select>
+      </div>
+
+      <div class="field">
+        <label for="origin">Origin</label>
+        <div class="suggestion-wrap">
+          <input id="origin" class="combo-input" autocomplete="off" placeholder="e.g., ATL" />
+          <button type="button" class="combo-toggle" data-target="origin" aria-label="Show origin options">▼</button>
+          <div id="originList" class="suggestion-list"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="destination">Destination</label>
+        <div class="suggestion-wrap">
+          <input id="destination" class="combo-input" autocomplete="off" placeholder="e.g., LAX" />
+          <button type="button" class="combo-toggle" data-target="destination"
+            aria-label="Show destination options">▼</button>
+          <div id="destList" class="suggestion-list"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="airline">Airline</label>
+        <div class="suggestion-wrap">
+          <input id="airline" class="combo-input" autocomplete="off" placeholder="e.g., DL" />
+          <button type="button" class="combo-toggle" data-target="airline" aria-label="Show airline options">▼</button>
+          <div id="airlineList" class="suggestion-list"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="scheduledDeparture">Departure Time</label>
+        <div class="suggestion-wrap">
+          <input id="scheduledDeparture" class="combo-input" autocomplete="off" placeholder="HH:MM" />
+          <button type="button" class="combo-toggle" data-target="scheduledDeparture"
+            aria-label="Show departure time options">▼</button>
+          <div id="depList" class="suggestion-list"></div>
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button id="applyBtn">Apply</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+
+      <section class="prediction-panel">
+        <div class="prediction-header">
+          <h2>Delay Prediction</h2>
+          <div id="predictionStatus" class="prediction-status idle">Backend required</div>
+        </div>
+        <p style="margin:0 0 12px;color:var(--ink-1);font-size:0.84rem;">Month and weekday are set here. Origin,
+          destination, airline, and departure time come from the shared filters above.</p>
+
+        <form id="predictionForm" class="prediction-grid">
+          <div class="field">
+            <label for="predictMonth">Month</label>
+            <select id="predictMonth">
+              <option value="1">January</option>
+              <option value="2">February</option>
+              <option value="3">March</option>
+              <option value="4">April</option>
+              <option value="5">May</option>
+              <option value="6">June</option>
+              <option value="7">July</option>
+              <option value="8">August</option>
+              <option value="9">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12" selected>December</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="predictDay">Day Of Week</label>
+            <select id="predictDay">
+              <option value="0">Monday</option>
+              <option value="1">Tuesday</option>
+              <option value="2" selected>Wednesday</option>
+              <option value="3">Thursday</option>
+              <option value="4">Friday</option>
+              <option value="5">Saturday</option>
+              <option value="6">Sunday</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="predictWeekend">Weekend</label>
+            <select id="predictWeekend">
+              <option value="0" selected>No</option>
+              <option value="1">Yes</option>
+            </select>
+          </div>
+        </form>
+
+        <div class="prediction-result">
+          <div class="prediction-label">Predicted departure delay</div>
+          <div id="predictionMinutes" class="prediction-minutes">--</div>
+          <div class="prediction-meta-wrap">
+            <div id="predictionCategory" class="prediction-meta">Waiting for input</div>
+            <span class="help-tip" tabindex="0"
+              data-tip="Categories: on_time <= 0 min, minor 1-30 min, moderate 31-60 min, severe > 60 min.">?</span>
+          </div>
+        </div>
+        <div id="predictionError" class="prediction-error"></div>
+      </section>
+    </aside>
+
+    <main class="dashboard">
+      <section class="panel chart with-help" id="mapChart">
+      </section>
+      <div class="chart-grid">
+        <section class="panel chart small" id="delayChart"></section>
+        <section class="panel chart small" id="routesChart">
+          <div class="stats-panel">
+            <div class="stats-panel-header">
+              <h2>Regional Summary</h2>
+              <p>Live totals for the routes currently visible under your explorer filters.</p>
+            </div>
+            <div class="stats stats-panel-grid">
+              <div class="stat-row"><span>Displayed points</span><span class="stat-value" id="statPoints">0</span></div>
+              <div class="stat-row"><span>Total flights</span><span class="stat-value" id="statFlights">0</span></div>
+              <div class="stat-row">
+                <span class="stat-label-wrap">
+                  <span>Active flights</span>
+                </span>
+                <span class="stat-value" id="statActiveFlights">0</span>
+              </div>
+              <div class="stat-row"><span>Avg dep delay</span><span class="stat-value" id="statDelay">0</span></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const DATA_URL = new URL("./us_region_dashboard_data.json", window.location.href).toString();
+    const US_MAP_URLS = [
+      "https://echarts.apache.org/examples/data/asset/geo/USA.json",
+      "https://raw.githubusercontent.com/apache/echarts-examples/gh-pages/public/data/asset/geo/USA.json"
+    ];
+
+    const controls = {
+      region: document.getElementById("region"),
+      origin: document.getElementById("origin"),
+      destination: document.getElementById("destination"),
+      airline: document.getElementById("airline"),
+      scheduledDeparture: document.getElementById("scheduledDeparture")
+    };
+
+    const stats = {
+      points: document.getElementById("statPoints"),
+      flights: document.getElementById("statFlights"),
+      activeFlights: document.getElementById("statActiveFlights"),
+      delay: document.getElementById("statDelay")
+    };
+
+    const prediction = {
+      form: document.getElementById("predictionForm"),
+      status: document.getElementById("predictionStatus"),
+      month: document.getElementById("predictMonth"),
+      day: document.getElementById("predictDay"),
+      weekend: document.getElementById("predictWeekend"),
+      minutes: document.getElementById("predictionMinutes"),
+      category: document.getElementById("predictionCategory"),
+      error: document.getElementById("predictionError")
+    };
+
+    const mapChart = echarts.init(document.getElementById("mapChart"));
+    const delayChart = echarts.init(document.getElementById("delayChart"));
+    let allRecords = [];
+    let optionLists = {};
+    const suggestionState = new Map();
+    const PREDICT_BASE = "http://127.0.0.1:8000";
+    let predictionTimer = null;
+
+    function setPredictionStatus(text, state) {
+      prediction.status.textContent = text;
+      prediction.status.className = `prediction-status ${state}`;
+    }
+
+    function setPredictionResult(minutesText, categoryText) {
+      prediction.minutes.textContent = minutesText;
+      prediction.category.textContent = categoryText;
+    }
+
+    function syncPredictionWeekend() {
+      prediction.weekend.value = Number(prediction.day.value) >= 5 ? "1" : "0";
+    }
+
+    async function checkPredictionHealth() {
+      try {
+        const response = await fetch(`${PREDICT_BASE}/api/health`);
+        const payload = await response.json();
+        setPredictionStatus(payload.model_found ? "Backend connected" : "Model missing", payload.model_found ? "live" : "error");
+      } catch (_err) {
+        setPredictionStatus("Backend offline", "error");
+      }
+    }
+
+    async function submitPrediction(event) {
+      if (event) event.preventDefault();
+      prediction.error.style.display = "none";
+      setPredictionResult("--", "Running model...");
+
+      const body = {
+        month: Number(prediction.month.value),
+        day_of_week: Number(prediction.day.value),
+        is_weekend: Number(prediction.weekend.value),
+        dep_time: controls.scheduledDeparture.value.trim(),
+        origin: controls.origin.value.trim().toUpperCase(),
+        dest: controls.destination.value.trim().toUpperCase(),
+        carrier: controls.airline.value.trim().toUpperCase()
+      };
+
+      if (!body.origin || !body.dest || !body.carrier || !body.dep_time) {
+        setPredictionStatus("Missing shared inputs", "error");
+        prediction.error.textContent = "Enter origin, destination, airline, and departure time in the shared filters above.";
+        prediction.error.style.display = "block";
+        setPredictionResult("--", "Complete the shared filters first");
+        return;
+      }
+
+      try {
+        const response = await fetch(`${PREDICT_BASE}/api/predict`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        const payload = await response.json();
+        if (!response.ok || !Array.isArray(payload) || !payload.length) {
+          throw new Error(payload?.error || "Prediction request failed.");
+        }
+
+        const result = payload[0];
+        setPredictionResult(`${Number(result.delay_min).toFixed(1)} min`, `Category: ${String(result.category).replace("_", " ")}`);
+        setPredictionStatus("Backend connected", "live");
+      } catch (err) {
+        setPredictionResult("--", "Unable to score this flight");
+        setPredictionStatus("Backend offline", "error");
+        prediction.error.textContent = String(err.message || err);
+        prediction.error.style.display = "block";
+      }
+    }
+
+    function schedulePrediction() {
+      clearTimeout(predictionTimer);
+      predictionTimer = window.setTimeout(() => {
+        submitPrediction();
+      }, 250);
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function getSuggestionMatches(values, query) {
+      const normalized = query.trim().toUpperCase();
+      const matches = normalized
+        ? values.filter((value) => String(value).toUpperCase().includes(normalized))
+        : values;
+      return matches;
+    }
+
+    function renderSuggestionList(listId, input, values) {
+      const list = document.getElementById(listId);
+      const matches = getSuggestionMatches(values, input.value);
+
+      if (!matches.length) {
+        list.innerHTML = '<div class="suggestion-item">No matches</div>';
+        list.classList.add("open");
+        return;
+      }
+
+      list.innerHTML = matches
+        .map((value) => `<div class="suggestion-item" data-value="${escapeHtml(value)}">${escapeHtml(value)}</div>`)
+        .join("");
+      list.classList.add("open");
+    }
+
+    function closeSuggestionList(listId) {
+      document.getElementById(listId).classList.remove("open");
+    }
+
+    function getRegionalTopPool() {
+      const region = controls.region.value || "All";
+      const regionalPool = region === "All"
+        ? [...allRecords]
+        : allRecords.filter((r) => r.region === region);
+
+      return regionalPool
+        .sort((a, b) => b.flights - a.flights)
+        .slice(0, 300);
+    }
+
+    function getActiveFilterValues(excludedInputId = null) {
+      return {
+        origin: excludedInputId === "origin" ? "" : controls.origin.value.trim().toUpperCase(),
+        destination: excludedInputId === "destination" ? "" : controls.destination.value.trim().toUpperCase(),
+        airline: excludedInputId === "airline" ? "" : controls.airline.value.trim().toUpperCase(),
+        scheduledDeparture: excludedInputId === "scheduledDeparture" ? "" : controls.scheduledDeparture.value.trim()
+      };
+    }
+
+    function getRecordsForSuggestion(excludedInputId = null) {
+      const active = getActiveFilterValues(excludedInputId);
+      return getRegionalTopPool().filter((r) => {
+        if (active.origin && r.origin !== active.origin) return false;
+        if (active.destination && r.destination !== active.destination) return false;
+        if (active.airline && r.airline !== active.airline) return false;
+        if (active.scheduledDeparture && r.scheduled_departure !== active.scheduledDeparture) return false;
+        return true;
+      });
+    }
+
+    function getDynamicSuggestionValues(inputId, fallbackValues) {
+      const records = getRecordsForSuggestion(inputId);
+      if (!records.length) return fallbackValues;
+
+      const extractor = {
+        origin: (r) => r.origin,
+        destination: (r) => r.destination,
+        airline: (r) => r.airline,
+        scheduledDeparture: (r) => r.scheduled_departure
+      }[inputId];
+
+      if (!extractor) return fallbackValues;
+
+      return [...new Set(records.map(extractor).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b)));
+    }
+
+    function refreshSuggestionInput(inputId, keepOpen = false) {
+      const state = suggestionState.get(inputId);
+      if (!state) return;
+      const input = document.getElementById(inputId);
+      const nextValues = getDynamicSuggestionValues(inputId, state.baseValues);
+      state.values = nextValues;
+
+      const currentValue = input.value.trim();
+      const hasExactMatch = nextValues.some((value) => String(value).toUpperCase() === currentValue.toUpperCase());
+      if (!keepOpen && currentValue && !hasExactMatch) {
+        input.value = "";
+      }
+
+      if (keepOpen) {
+        renderSuggestionList(state.listId, input, nextValues);
+      } else {
+        closeSuggestionList(state.listId);
+      }
+    }
+
+    function refreshAllSuggestions(keepOpenInputId = null) {
+      for (const inputId of suggestionState.keys()) {
+        refreshSuggestionInput(inputId, inputId === keepOpenInputId);
+      }
+    }
+
+    function wireSuggestionInput(inputId, listId, values) {
+      const input = document.getElementById(inputId);
+      const list = document.getElementById(listId);
+      const toggle = document.querySelector(`.combo-toggle[data-target="${inputId}"]`);
+
+      suggestionState.set(inputId, { listId, values: [...values], baseValues: [...values] });
+
+      input.addEventListener("focus", () => {
+        refreshSuggestionInput(inputId, true);
+      });
+      input.addEventListener("input", () => {
+        refreshSuggestionInput(inputId, true);
+      });
+      input.addEventListener("change", () => {
+        refreshAllSuggestions();
+        schedulePrediction();
+      });
+
+      input.addEventListener("keydown", (event) => {
+        const items = Array.from(list.querySelectorAll(".suggestion-item[data-value]"));
+        if (!items.length) return;
+
+        const activeIndex = items.findIndex((item) => item.classList.contains("active"));
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          const nextIndex = activeIndex < items.length - 1 ? activeIndex + 1 : 0;
+          items.forEach((item) => item.classList.remove("active"));
+          items[nextIndex].classList.add("active");
+          return;
+        }
+
+        if (event.key === "ArrowUp") {
+          event.preventDefault();
+          const nextIndex = activeIndex > 0 ? activeIndex - 1 : items.length - 1;
+          items.forEach((item) => item.classList.remove("active"));
+          items[nextIndex].classList.add("active");
+          return;
+        }
+
+        if (event.key === "Enter") {
+          const activeItem = list.querySelector(".suggestion-item.active[data-value]");
+          if (activeItem) {
+            event.preventDefault();
+            input.value = activeItem.dataset.value || "";
+            closeSuggestionList(listId);
+            refreshAllSuggestions();
+            schedulePrediction();
+          }
+        }
+      });
+
+      list.addEventListener("mousedown", (event) => {
+        const target = event.target.closest(".suggestion-item[data-value]");
+        if (!target) return;
+        event.preventDefault();
+        input.value = target.dataset.value || "";
+        closeSuggestionList(listId);
+        refreshAllSuggestions();
+        schedulePrediction();
+      });
+
+      if (toggle) {
+        toggle.addEventListener("mousedown", (event) => {
+          event.preventDefault();
+          const isOpen = list.classList.contains("open");
+          if (isOpen) {
+            closeSuggestionList(listId);
+          } else {
+            input.focus();
+            refreshSuggestionInput(inputId, true);
+          }
+        });
+      }
+    }
+
+    function initializeControls(options) {
+      controls.region.innerHTML = options.regions.map((r) => `<option value="${r}">${r}</option>`).join("");
+      wireSuggestionInput("origin", "originList", options.origins);
+      wireSuggestionInput("destination", "destList", options.destinations);
+      wireSuggestionInput("airline", "airlineList", options.airlines);
+      wireSuggestionInput("scheduledDeparture", "depList", options.scheduled_departures);
+    }
+
+    function routeName(r) {
+      return `${r.origin} -> ${r.destination} | ${r.airline}${r.flight_number}`;
+    }
+
+    function getFilteredRecords() {
+      const { origin, destination, airline, scheduledDeparture } = getActiveFilterValues();
+      const top300 = getRegionalTopPool();
+
+      return top300.filter((r) => {
+        if (origin && r.origin !== origin) return false;
+        if (destination && r.destination !== destination) return false;
+        if (airline && r.airline !== airline) return false;
+        if (scheduledDeparture && r.scheduled_departure !== scheduledDeparture) return false;
+        return true;
+      });
+    }
+
+    function updateStats(records) {
+      const totalFlights = records.reduce((sum, r) => sum + r.flights, 0);
+      const activeFlights = records.reduce((sum, r) => sum + Math.max((r.active_flights ?? r.flights) - 0, 0), 0);
+      const delayItems = records.filter((r) => typeof r.avg_dep_delay === "number");
+      const avgDelay = delayItems.length
+        ? (delayItems.reduce((sum, r) => sum + r.avg_dep_delay, 0) / delayItems.length)
+        : 0;
+
+      stats.points.textContent = records.length.toLocaleString();
+      stats.flights.textContent = totalFlights.toLocaleString();
+      stats.activeFlights.textContent = activeFlights.toLocaleString();
+      stats.delay.textContent = `${avgDelay.toFixed(2)} min`;
+    }
+
+    function sumMetric(records, field) {
+      return records.reduce((sum, record) => sum + Number(record[field] || 0), 0);
+    }
+
+    function renderDelayBreakdown(records) {
+      const values = [
+        { name: "Carrier", value: sumMetric(records, "carrier_delay") },
+        { name: "Weather", value: sumMetric(records, "weather_delay") },
+        { name: "NAS", value: sumMetric(records, "nas_delay") },
+        { name: "Security", value: sumMetric(records, "security_delay") },
+        { name: "Late Aircraft", value: sumMetric(records, "late_aircraft_delay") },
+        { name: "Active Flights", value: sumMetric(records, "active_flights") }
+      ];
+
+      delayChart.setOption({
+        backgroundColor: "transparent",
+        title: {
+          text: "Delay Causes + Active Flights",
+          left: 14,
+          top: 10,
+          textStyle: { color: "#2d2d2d", fontSize: 16, fontWeight: 700 }
+        },
+        grid: { left: 122, right: 26, top: 52, bottom: 20 },
+        tooltip: {
+          trigger: "axis",
+          axisPointer: { type: "shadow" },
+          formatter: (items) => {
+            const item = items[0];
+            const metric = values[item.dataIndex];
+            return `${metric.name}<br/>Total: ${metric.value.toLocaleString()}`;
+          }
+        },
+        xAxis: {
+          type: "value",
+          axisLabel: { color: "#4a4a4a" },
+          splitLine: { lineStyle: { color: "#e8ddcf" } }
+        },
+        yAxis: {
+          type: "category",
+          data: values.map((item) => item.name),
+          axisLabel: { color: "#4a4a4a", fontSize: 11 },
+          inverse: true
+        },
+        series: [
+          {
+            type: "bar",
+            data: values.map((item) => item.value),
+            itemStyle: {
+              borderRadius: [0, 8, 8, 0],
+              color: (params) => {
+                const label = values[params.dataIndex].name;
+                if (label === "Active Flights") return "#2f7d55";
+                return ["#c24b33", "#cf7a36", "#1d5f77", "#7d4b9d", "#9a7b3b"][params.dataIndex] || "#c24b33";
+              }
+            }
+          }
+        ]
+      }, true);
+    }
+
+    function renderMap(records) {
+      const active = getActiveFilterValues();
+      const mapMode = "Routes matching current filters";
+      const originFocusRecord = active.origin
+        ? records.find((r) => r.origin === active.origin)
+        : null;
+      const geoCenter = originFocusRecord
+        ? [originFocusRecord.origin_lon, originFocusRecord.origin_lat]
+        : undefined;
+      const geoZoom = originFocusRecord ? 3.2 : 1.05;
+      const linesData = records.map((r) => ({
+        coords: [
+          [r.origin_lon, r.origin_lat],
+          [r.dest_lon, r.dest_lat]
+        ],
+        value: r.flights,
+        route: routeName(r),
+        airline: r.airline,
+        departure: r.scheduled_departure,
+        delay: r.avg_dep_delay
+      }));
+
+      const originPoints = records.map((r) => ({
+        name: r.origin,
+        value: [r.origin_lon, r.origin_lat, r.flights],
+        route: routeName(r)
+      }));
+
+      mapChart.setOption({
+        backgroundColor: "transparent",
+        title: {
+          text: "Regional Route Map",
+          subtext: mapMode,
+          left: 14,
+          top: 10,
+          textStyle: { color: "#2d2d2d", fontSize: 16, fontWeight: 700 },
+          subtextStyle: { color: "#6f6155", fontSize: 12 }
+        },
+        tooltip: {
+          trigger: "item",
+          formatter: (p) => {
+            if (p.seriesType === "lines") {
+              const d = p.data;
+              return `${d.route}<br/>Flights: ${d.value}<br/>Sched: ${d.departure}<br/>Avg Delay: ${d.delay ?? "NA"} min`;
+            }
+            if (p.seriesType === "effectScatter") {
+              return `${p.data.name}<br/>Flights: ${p.data.value[2]}`;
+            }
+            return p.name;
+          }
+        },
+        geo: {
+          map: "USA",
+          roam: true,
+          zoom: geoZoom,
+          center: geoCenter,
+          label: { show: false },
+          itemStyle: {
+            areaColor: "#f0e1cf",
+            borderColor: "#8c7259",
+            borderWidth: 0.8
+          },
+          emphasis: {
+            itemStyle: { areaColor: "#dfc2a7" }
+          }
+        },
+        visualMap: {
+          min: 0,
+          max: Math.max(1, ...records.map((r) => r.flights)),
+          calculable: true,
+          orient: "horizontal",
+          left: "center",
+          bottom: 8,
+          inRange: { color: ["#fee8c8", "#e34a33"] },
+          textStyle: { color: "#4b4b4b" }
+        },
+        series: [
+          {
+            type: "lines",
+            coordinateSystem: "geo",
+            zlevel: 1,
+            blendMode: "lighter",
+            lineStyle: {
+              color: "#c24b33",
+              width: 1.1,
+              opacity: 0.35,
+              curveness: 0.12
+            },
+            effect: {
+              show: true,
+              period: 5,
+              trailLength: 0.2,
+              symbol: "arrow",
+              symbolSize: 5
+            },
+            data: linesData
+          },
+          {
+            type: "effectScatter",
+            coordinateSystem: "geo",
+            zlevel: 2,
+            symbolSize: (v) => Math.max(5, Math.min(16, 4 + Math.sqrt(v[2]) / 1.8)),
+            itemStyle: {
+              color: "#1d5f77"
+            },
+            data: originPoints
+          }
+        ]
+      }, true);
+    }
+
+    function renderAll() {
+      const filtered = getFilteredRecords();
+      updateStats(filtered);
+      renderMap(filtered);
+      renderDelayBreakdown(filtered);
+    }
+
+    function resetFilters() {
+      controls.region.value = "All";
+      controls.origin.value = "";
+      controls.destination.value = "";
+      controls.airline.value = "";
+      controls.scheduledDeparture.value = "";
+
+      for (const [inputId, { listId, baseValues }] of suggestionState.entries()) {
+        renderSuggestionList(listId, document.getElementById(inputId), baseValues);
+        closeSuggestionList(listId);
+      }
+      refreshAllSuggestions();
+    }
+
+    document.addEventListener("click", (event) => {
+      for (const { listId } of suggestionState.values()) {
+        const inputId = Array.from(suggestionState.entries()).find(([, state]) => state.listId === listId)?.[0];
+        const input = inputId ? document.getElementById(inputId) : null;
+        const list = document.getElementById(listId);
+        if (!input || !list) continue;
+        if (event.target === input || list.contains(event.target)) continue;
+        closeSuggestionList(listId);
+      }
+    });
+
+    async function fetchJsonStrict(url, label) {
+      const response = await fetch(url, { cache: "no-store" });
+      const bodyText = await response.text();
+
+      if (!response.ok) {
+        throw new Error(
+          `${label} request failed (${response.status} ${response.statusText}) at ${url}. ` +
+          `Response starts with: ${bodyText.slice(0, 120)}`
+        );
+      }
+
+      try {
+        return JSON.parse(bodyText);
+      } catch (_err) {
+        throw new Error(
+          `${label} is not valid JSON at ${url}. ` +
+          `Response starts with: ${bodyText.slice(0, 120)}`
+        );
+      }
+    }
+
+    async function loadUsMapJson() {
+      const errors = [];
+
+      for (const mapUrl of US_MAP_URLS) {
+        try {
+          return await fetchJsonStrict(mapUrl, "US map file");
+        } catch (err) {
+          errors.push(String(err));
+        }
+      }
+
+      throw new Error(`Unable to load USA GeoJSON. Attempts: ${errors.join(" | ")}`);
+    }
+
+    async function loadDashboard() {
+      const [dataset, usaMap] = await Promise.all([
+        fetchJsonStrict(DATA_URL, "Dashboard data"),
+        loadUsMapJson()
+      ]);
+
+      echarts.registerMap("USA", usaMap);
+
+      allRecords = dataset.records;
+      optionLists = dataset.options;
+      initializeControls(optionLists);
+      resetFilters();
+      syncPredictionWeekend();
+      checkPredictionHealth();
+      renderAll();
+    }
+
+    document.getElementById("applyBtn").addEventListener("click", renderAll);
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      resetFilters();
+      renderAll();
+      schedulePrediction();
+    });
+    controls.region.addEventListener("change", () => {
+      refreshAllSuggestions();
+      renderAll();
+      schedulePrediction();
+    });
+    controls.origin.addEventListener("change", renderAll);
+    controls.destination.addEventListener("change", renderAll);
+    controls.airline.addEventListener("change", renderAll);
+    controls.scheduledDeparture.addEventListener("change", renderAll);
+    prediction.day.addEventListener("change", () => {
+      syncPredictionWeekend();
+      schedulePrediction();
+    });
+    prediction.month.addEventListener("change", schedulePrediction);
+    prediction.weekend.addEventListener("change", schedulePrediction);
+    prediction.form.addEventListener("submit", submitPrediction);
+
+    window.addEventListener("resize", () => {
+      mapChart.resize();
+      delayChart.resize();
+    });
+
+    loadDashboard().catch((err) => {
+      console.error(err);
+      document.body.innerHTML = `<pre style="padding:16px;color:#9b1c1c;font-family:Consolas,monospace;">Failed to load dashboard data.\n${String(err)}</pre>`;
+    });
+  </script>
+</body>
+
+</html>

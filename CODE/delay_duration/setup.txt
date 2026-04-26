@@ -1,0 +1,11 @@
+### How to recreate our dataset ###
+
+1. Set up Python libraries by running on cmd: python -m pip install -r requirements.txt
+
+2. Go to www.kaggle.com and login or create a new account.
+
+3. Go to www.kaggle.com/settings. Under API > API Tokens > click "Generate New Token".
+
+4. Copy your API token and paste it into the .env file under the field KAGGLE_API_TOKEN.
+
+5. Run the file data.py and it will generate our dataset in dataset.csv.
